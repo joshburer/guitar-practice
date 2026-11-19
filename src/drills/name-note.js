@@ -35,7 +35,7 @@ export default {
         button.classList.add(ok ? 'is-ok' : 'is-bad');
         if (!ok) pad.button(q.pc).classList.add('is-reveal');
         draw({ label: pcName(q.pc, accidentals === 'flat' ? 'flat' : 'sharp'), role: ok ? 'ok' : 'reveal' });
-        ui.done(ok, ok ? '' : `That is ${pcName(q.pc)}.`);
+        ui.done(ok, ok ? '' : `That is ${pcName(q.pc, accidentals)}.`);
       },
     });
     ui.answers.append(pad);

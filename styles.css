@@ -1,6 +1,7 @@
 /* Colour tokens live in index.html. Everything here is built from them. */
 
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   font: 16px/1.45 var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -105,7 +106,7 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
   transition: transform 0.12s, background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
 }
 .btn:active, .root-btn:active, .key:active, .choice:active, .shape:active, .degree:active, .tone:is(button):active, .listen:active { transform: scale(0.96); }
-.btn-small { min-height: 34px; padding: 0 12px; font-size: 13.5px; border-radius: 10px; }
+.btn-small { flex: none; white-space: nowrap; min-height: 34px; padding: 0 12px; font-size: 13.5px; border-radius: 10px; }
 .btn-primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .btn-primary:disabled { opacity: 0.35; cursor: default; }
 .btn-light { background: var(--pearl); border-color: var(--pearl); color: var(--dot-ink); min-width: 120px; }
@@ -118,6 +119,7 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
 .seg-grid { display: grid; }
 .seg-btn {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 38px;
   padding: 0 12px;
   border: 0;
@@ -336,7 +338,9 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
 .answers { display: flex; flex-direction: column; gap: 10px; }
 .drill-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
 .drill-foot .btn { min-width: 112px; animation: rise 0.2s both; }
-.streak { padding: 3px 9px; border-radius: 999px; background: var(--good-bg); color: var(--good); font-size: 12.5px; font-weight: 700; white-space: nowrap; animation: pop 0.3s var(--spring); }
+.streak { padding: 3px 9px; border-radius: 999px; background: var(--good-bg); color: var(--good); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.streak.pop { animation: pop 0.3s var(--spring); }
+@media (max-width: 359px) { .streak span { display: none; } .streak b::after { content: '×'; } }
 .drill:not(.play):not(.summary) > .prompt, .drill:not(.play):not(.summary) > .stage, .drill:not(.play):not(.summary) > .answers { animation: rise 0.22s both; }
 .drill.is-wrong > .stage { animation: shake 0.3s; }
 .feedback { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 15px; }
@@ -471,7 +475,7 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
 
 /* ---------- sheet ---------- */
 .sheet-backdrop { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: var(--scrim); animation: fade 0.2s both; }
-.sheet-backdrop.is-closing { animation: fade 0.2s reverse both; pointer-events: none; }
+.sheet-backdrop.is-closing { animation: fade-out 0.2s both; pointer-events: none; }
 .sheet-backdrop.is-closing .sheet { animation: sheet-out 0.2s ease-in both; }
 .sheet {
   width: 100%;
@@ -506,6 +510,7 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
 .session:not([hidden]) { animation: session-in 0.28s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 @keyframes fade { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
 @keyframes pop { from { transform: scale(0.86); opacity: 0.4; } }
 @keyframes count { from { transform: scale(0.6); opacity: 0; } }
 @keyframes beat { from { transform: scale(1.7); } }
@@ -514,3 +519,13 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
 @keyframes sheet-in { from { transform: translateY(100%); } }
 @keyframes sheet-out { to { transform: translateY(100%); } }
 @keyframes session-in { from { opacity: 0; transform: scale(0.97); } }
+
+/* short phones: tighten the drill screen so the answer and Next stay on screen */
+@media (max-height: 620px) {
+  .drill { gap: 8px; }
+  .stage { min-height: 72px; }
+  .key, .choice { min-height: 44px; }
+  .key-accidental { min-height: 38px; }
+  .quality .seg-btn { min-height: 38px; }
+  .drill-foot { min-height: 44px; }
+}

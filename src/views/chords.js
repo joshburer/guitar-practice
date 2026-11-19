@@ -68,7 +68,7 @@ function Triads(root, state, set, e) {
       label: 'Triad quality',
       value: state.triad,
       onChange: (triad) => set({ triad }),
-      options: ['maj', 'min', 'dim', 'aug'].map((id) => ({ value: id, label: chordById(id).name })),
+      options: ['maj', 'min', 'dim', 'aug'].map((id) => ({ value: id, label: chordById(id).short })),
     }),
     h('div', { class: 'field' }, h('p', { class: 'field-label' }, 'String set'), Segmented({ label: 'String set', options: sets, value: lo, onChange: (s) => set({ set: s }) })),
     h(

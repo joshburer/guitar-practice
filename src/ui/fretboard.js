@@ -88,5 +88,8 @@ export function Fretboard({ tuning, from = 0, to = 12, dots = [], onTap, strings
     });
   }
 
-  return h('div', { class: 'fb-wrap' }, svg);
+  const wrap = h('div', { class: 'fb-wrap' }, svg);
+  // A left-handed neck that scrolls starts at the nut, which is on the right.
+  if (lefty && svg.style.minWidth) requestAnimationFrame(() => (wrap.scrollLeft = wrap.scrollWidth));
+  return wrap;
 }

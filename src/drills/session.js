@@ -1,4 +1,4 @@
-import { h, buzz } from '../ui/dom.js';
+import { h, buzz, replay } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { Segmented, Select, openSheet } from '../ui/controls.js';
 import { env } from '../state/settings.js';
@@ -72,10 +72,11 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
   let timer = 0;
   let streak = 0;
   let best = 0;
+  let answered = false; // the question on screen has been scored
   let goOn = null; // moves on from the question on screen, once it has been answered wrong
   // Enter or space moves on after a miss, for anyone at a keyboard.
   const onKey = (event) => {
-    if (!goOn || !['Enter', ' '].includes(event.key) || event.target.closest?.('button, select, .sheet')) return;
+    if (!goOn || !['Enter', ' '].includes(event.key) || event.target.closest?.('button, select') || document.querySelector('.sheet-backdrop')) return;
     event.preventDefault();
     goOn();
   };
@@ -102,6 +103,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
     let locked = false;
     lastKey = key;
     goOn = null;
+    answered = false;
 
     const main = h('h2', { class: 'prompt-main' });
     const sub = h('p', { class: 'prompt-sub' });
@@ -109,7 +111,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
     const answers = h('div', { class: 'answers' });
     const note = h('p', { class: 'feedback', role: 'status' });
     const next = h('button', { type: 'button', class: 'btn btn-primary', hidden: true, onclick: advance }, 'Next');
-    const run = h('p', { class: 'streak', hidden: streak < 3 }, `${streak} in a row`);
+    const run = h('p', { class: 'streak', hidden: streak < 3 }, h('b', {}, streak), h('span', {}, ' in a row'));
     const bar = h('i', { style: { width: `${(index / length) * 100}%` } });
 
     const ui = {
@@ -128,13 +130,14 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
       // Call once with the result. `explain` is shown as feedback (always on a miss).
       done(correct, explain = '') {
         if (locked) return;
-        locked = true;
+        locked = answered = true;
         record(deck, key, correct);
         results.push({ correct, ms: performance.now() - started, label: q.label });
         streak = correct ? streak + 1 : 0;
         best = Math.max(best, streak);
-        run.textContent = `${streak} in a row`;
+        run.firstChild.textContent = streak;
         run.hidden = streak < 3;
+        if (correct) replay(run, 'pop');
         buzz(correct ? 12 : [30, 60, 30]);
         screen.classList.add(correct ? 'is-right' : 'is-wrong');
         bar.style.width = `${((index + 1) / length) * 100}%`;
@@ -143,6 +146,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
         if (correct) timer = setTimeout(advance, explain ? 1600 : 750);
         else {
           next.hidden = false;
+          next.focus({ preventScroll: true }); // Enter or space moves on
           goOn = advance;
         }
       },
@@ -155,7 +159,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
         'div',
         { class: 'drill-top' },
         h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'End session', onclick: exit }, icon('close')),
-        h('p', { class: 'drill-title' }, drills.length > 1 ? `${title} · ${drill.title}` : drill.title),
+        h('p', { class: 'drill-title' }, drill.title),
         run,
         h('p', { class: 'drill-count' }, `${index + 1} / ${length}`),
         drills.length === 1 && drill.options && h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Drill options', onclick: () => options(drill) }, icon('settings')),
@@ -178,7 +182,9 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
 
   function options(drill) {
     clearTimeout(timer);
-    openOptions(drill, () => ask(drill));
+    goOn = null;
+    // A question already scored is not asked again: move on from it.
+    openOptions(drill, () => (answered ? advance() : ask(drill)));
   }
 
   function summary() {

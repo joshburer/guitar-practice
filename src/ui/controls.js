@@ -84,11 +84,14 @@ export function Choices({ choices, onPick, columns = 4 }) {
 export function openSheet(title, build, onClose) {
   const body = h('div', { class: 'sheet-body' });
   let closed = false;
+  // Keep the keyboard inside the sheet while it is open.
+  const app = document.getElementById('app');
   const onKey = (event) => event.key === 'Escape' && close();
   const close = () => {
     if (closed) return;
     closed = true;
     document.removeEventListener('keydown', onKey);
+    app?.removeAttribute('inert');
     backdrop.classList.add('is-closing');
     setTimeout(() => backdrop.remove(), 200);
     onClose?.();
@@ -106,6 +109,8 @@ export function openSheet(title, build, onClose) {
   const backdrop = h('div', { class: 'sheet-backdrop', onclick: (e) => e.target === backdrop && close() }, sheet);
   rebuild();
   document.body.append(backdrop);
+  app?.setAttribute('inert', '');
+  sheet.querySelector('.icon-btn').focus({ preventScroll: true });
   document.addEventListener('keydown', onKey);
   return close;
 }

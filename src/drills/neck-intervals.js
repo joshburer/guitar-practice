@@ -104,7 +104,7 @@ export default {
         if (!ok) choices.button(q.interval.id).classList.add('is-reveal');
         draw([{ ...q.target, label: q.interval.label, role: ok ? 'ok' : 'reveal' }]);
         play();
-        ui.done(ok, ok ? '' : `That is a ${q.interval.name.toLowerCase()}.`);
+        ui.done(ok, ok ? '' : `That is ${/^[aeiou]/i.test(q.interval.name) ? 'an' : 'a'} ${q.interval.name.toLowerCase()}.`);
       },
     });
     ui.answers.append(choices);

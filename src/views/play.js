@@ -36,6 +36,6 @@ export function PlayView(root, app) {
     ),
   );
   if (!settings.sound) {
-    root.append(h('p', { class: 'notice' }, 'Sound is off: no click, no answers.', h('button', { type: 'button', class: 'btn btn-small', onclick: () => setSetting('sound', true) }, 'Turn on')));
+    root.firstChild.after(h('p', { class: 'notice' }, 'Sound is off: no click, no answers.', h('button', { type: 'button', class: 'btn btn-small', onclick: () => setSetting('sound', true) }, 'Turn on')));
   }
 }

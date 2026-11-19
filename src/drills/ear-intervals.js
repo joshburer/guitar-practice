@@ -62,7 +62,7 @@ export default {
         const ok = id === q.key;
         button.classList.add(ok ? 'is-ok' : 'is-bad');
         if (!ok) choices.button(q.key).classList.add('is-reveal');
-        ui.done(ok, ok ? '' : `That was a ${q.interval.name.toLowerCase()}.`);
+        ui.done(ok, ok ? '' : `That was ${/^[aeiou]/i.test(q.interval.name) ? 'an' : 'a'} ${q.interval.name.toLowerCase()}.`);
       },
     });
     ui.answers.append(choices);

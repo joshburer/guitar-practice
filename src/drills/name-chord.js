@@ -60,7 +60,7 @@ export default {
       if (q.shape) {
         const info = revealed ? toneInfo(tuning.midi, q.chord.tones) : () => ({ role: 'q' });
         const play = () => strum(midisOf(tuning.midi, q.shape.frets));
-        ui.stage.replaceChildren(h('div', { class: 'center' }, ChordDiagram({ frets: q.shape.frets, info, lefty, scale: 1.6, onClick: play })));
+        ui.stage.replaceChildren(h('div', { class: 'center' }, ChordDiagram({ frets: q.shape.frets, info, lefty, scale: window.innerHeight < 700 ? 1.15 : 1.6, onClick: play })));
       } else {
         const tones = revealed ? q.chord.tones : q.order;
         ui.stage.replaceChildren(
