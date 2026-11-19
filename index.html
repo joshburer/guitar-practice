@@ -1,0 +1,56 @@
+<title>Woodshed Guitar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Music&text=%E2%99%AD%E2%99%AF&display=swap">
+<style>
+  /* Layout: one thumb-reachable column with a fixed tab bar. The neck is the hero of every screen,
+     drawn as the instrument in both themes. Colour is reserved for music theory: the UI itself stays neutral. */
+  :root {
+    --bg: #ECEFF2;
+    --surface: #FFFFFF;
+    --sunken: #DFE4EA;
+    --ink: #14202B;
+    --muted: #586674;
+    --line: #D0D8E0;
+    --focus: #2A6FA8;
+    --good: #18795A;
+    --good-bg: #D6F0E4;
+    --bad: #BC3A2B;
+    --bad-bg: #F8DDD8;
+    --scrim: rgba(13, 19, 25, 0.5);
+
+    /* The neck and its dots keep their colours in both themes, named after classic guitar finishes */
+    --board: #2C221D;          /* rosewood */
+    --fret: #A7AEB5;           /* nickel */
+    --string: #DADEE2;
+    --pearl: #F2ECDF;          /* the 5th, inlays, the nut */
+    --root: #F2684F;           /* fiesta red */
+    --third: #74B9EE;          /* sonic blue */
+    --seventh: #EEC052;        /* shoreline gold */
+    --hit: #67D6A6;            /* surf green */
+    --tone: #62544B;
+    --dot-ink: #17110E;
+
+    --font-display: "Bricolage Grotesque", "Noto Music", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Instrument Sans", "Noto Music", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D1319; --surface: #17212B; --sunken: #212D39; --ink: #E9EEF2; --muted: #96A4B2; --line: #2A3744;
+      --focus: #74B9EE; --good: #67D6A6; --good-bg: #173B30; --bad: #F58A76; --bad-bg: #47231E; --scrim: rgba(0, 0, 0, 0.6);
+      --board: #33271F;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D1319; --surface: #17212B; --sunken: #212D39; --ink: #E9EEF2; --muted: #96A4B2; --line: #2A3744;
+    --focus: #74B9EE; --good: #67D6A6; --good-bg: #173B30; --bad: #F58A76; --bad-bg: #47231E; --scrim: rgba(0, 0, 0, 0.6);
+    --board: #33271F;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--ink); }
+</style>
+<link rel="stylesheet" href="styles.css">
+
+<div id="app"></div>
+<script type="module" src="src/app.js"></script>
