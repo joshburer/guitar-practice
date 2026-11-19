@@ -34,6 +34,14 @@ export function PlayView(root, app) {
         ),
       ),
     ),
+    section(
+      'No clock',
+      h(
+        'div',
+        { class: 'list' },
+        h('button', { type: 'button', class: 'row row-plain', onclick: app.startFree }, h('span', { class: 'row-text' }, h('b', {}, 'Free play'), h('span', {}, 'Play anything: see each note on the neck.')), icon('chevron', 18)),
+      ),
+    ),
   );
   if (!settings.sound) {
     root.firstChild.after(h('p', { class: 'notice' }, 'Sound is off: no click, no answers.', h('button', { type: 'button', class: 'btn btn-small', onclick: () => setSetting('sound', true) }, 'Turn on')));

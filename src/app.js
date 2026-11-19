@@ -12,6 +12,7 @@ import { ChordsView } from './views/chords.js';
 import { KeysView } from './views/keys.js';
 import { PlayView } from './views/play.js';
 import { runPlay } from './play/runner.js';
+import { runFree } from './play/free.js';
 import { SESSION } from './play/index.js';
 
 // Each tab is a function (root, app) that draws itself. To add a tab, add a line here.
@@ -52,6 +53,7 @@ const app = {
   startMix: () => start({ drills: DRILLS.filter((d) => settings.sound || !d.needsSound), title: 'Today’s mix' }),
   startPlay: (mode) => start({ blocks: [{ mode }], title: mode.title }, runPlay),
   startSession: () => start({ blocks: SESSION, title: 'Daily session' }, runPlay),
+  startFree: () => start({}, runFree),
   openSettings,
 };
 

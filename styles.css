@@ -529,3 +529,11 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
   .quality .seg-btn { min-height: 38px; }
   .drill-foot { min-height: 44px; }
 }
+
+/* ---------- free play ---------- */
+.live { width: 10px; height: 10px; margin-right: 14px; border-radius: 50%; background: var(--sunken); transition: background 0.15s, box-shadow 0.15s; }
+.live.is-on { background: var(--hit); box-shadow: 0 0 0 5px color-mix(in srgb, var(--hit) 25%, transparent); }
+.free .prompt-sub { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; min-height: 34px; }
+.trail { display: flex; justify-content: center; gap: 6px; min-height: 44px; padding-bottom: 8px; }
+.trail .tone { justify-content: center; min-width: 36px; color: var(--muted); }
+.trail .tone.is-on { background: var(--ink); border-color: var(--ink); color: var(--bg); animation: pop 0.25s var(--spring); }
