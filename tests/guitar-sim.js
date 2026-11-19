@@ -42,3 +42,27 @@ export function brightStrum(midis, { rate = 44100, length = 16384, start = 0.12,
   for (let i = 0; i < length; i++) out[i] += rand() * noise;
   return out;
 }
+
+// One plucked note as a phone microphone hears it: a pick click, partials that die faster the higher they are,
+// weak lows (small microphones roll off below ~160 Hz), room noise and mains hum. Used for the note tracker.
+export function pluckedNote(midi, { rate = 48000, seconds = 1, at = 0.3, amp = 0.05, noise = 0.002, hum = 0.003, seed = 1 } = {}) {
+  let s = seed;
+  const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647) * 2 - 1;
+  const out = new Float32Array(Math.floor(rate * seconds));
+  const hz = 440 * 2 ** ((midi - 69) / 12);
+  const i0 = Math.floor(at * rate);
+  for (let k = 1; k <= 14; k++) {
+    const f = hz * k * Math.sqrt(1 + 0.00012 * k * k);
+    if (f > rate / 2.2) break;
+    const a = (amp / k ** 0.8 / Math.sqrt(1 + (160 / f) ** 4)) * (k % 3 === 0 ? 0.6 : 1);
+    const decay = (1.2 + k * 0.9) * (1 + (midi - 40) / 24);
+    const phase = rand() * Math.PI;
+    for (let i = i0; i < out.length; i++) {
+      const t = (i - i0) / rate;
+      out[i] += a * Math.sin(2 * Math.PI * f * t + phase) * Math.exp(-t * decay) * Math.min(1, t / 0.002);
+    }
+  }
+  for (let i = i0; i < i0 + rate * 0.008; i++) out[i] += rand() * amp * 0.5 * (1 - (i - i0) / (rate * 0.008));
+  for (let i = 0; i < out.length; i++) out[i] += rand() * noise * 1.7 + hum * Math.sin((2 * Math.PI * 60 * i) / rate);
+  return out;
+}
