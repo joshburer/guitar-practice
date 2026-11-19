@@ -11,6 +11,10 @@ npm run build   # writes dist/, a static site for any HTTPS host
 Pushing to `main` on GitHub runs the tests, builds `dist/` and publishes it to GitHub Pages
 (`.github/workflows/pages.yml`). One-time setup: repo Settings → Pages → Source: GitHub Actions.
 
+Each build puts its files in a folder named after a hash of their content and writes `version.json`. The page checks
+that file when it opens or comes back to the foreground and reloads onto a new deploy, so a phone's home-screen copy
+never stays stale.
+
 `index.html` is a page fragment, the form a Claude artifact is published in. `npm start` and `npm run build` wrap it
 into a full document (`shell.mjs`). The microphone only works on the self-hosted build: browsers offer it to HTTPS
 sites, and Claude artifacts are not allowed to ask for it. Everything else behaves the same in both.
