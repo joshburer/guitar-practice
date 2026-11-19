@@ -126,6 +126,10 @@ export default {
       sound(b, at) {
         if (reveal && b === find && found == null) pluck(tuning[string] + spots[0], 0, { at });
       },
+      reset() {
+        started = 0;
+        if (found == null) scored = false;
+      },
       hear(midi, b) {
         if (scored || b >= find || !spots.some((f) => tuning[string] + f === midi)) return;
         started ||= performance.now();

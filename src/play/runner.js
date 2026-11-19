@@ -98,6 +98,7 @@ export function runPlay(host, { blocks, title, onExit }) {
     const fresh = shown?.s !== s;
     const moved = fresh || shown.b !== b; // a new beat, not just the microphone redrawing this one
     if (fresh) {
+      if (micNote.classList.contains('is-ok') || micNote.classList.contains('is-bad')) micNote.textContent = '';
       micNote.classList.remove('is-ok', 'is-bad');
       delete stage.dataset.sig; // steps use this to skip redrawing a picture that has not changed
     }
@@ -108,8 +109,8 @@ export function runPlay(host, { blocks, title, onExit }) {
       main.classList.toggle('prompt-long', text.length > 7);
       replay(main, 'pop');
     }
-    sub.textContent = value(s.detail, b) ?? '';
     s.draw(stage, b);
+    sub.textContent = value(s.detail, b) ?? '';
     if (moved) {
       const inBar = (b + (s.offset ?? 0)) % 4;
       [...beats.children].forEach((dot, i) => dot.classList.toggle('is-on', i === inBar));
@@ -122,7 +123,7 @@ export function runPlay(host, { blocks, title, onExit }) {
       bar.style.width = `${((b + 1) / s.beats) * 100}%`;
     }
     showNext(s, b);
-    const left = limit() - s.playedAt;
+    const left = s.intro ? s.limit - s.playedAt : s.limit - s.playedAt - (b * 60) / prefs.bpm;
     heading.textContent = blocks.length > 1 ? `${title} · ${s.mode.title} · ${clock(Math.max(0, left))}` : s.mode.title;
   }
 
@@ -133,18 +134,20 @@ export function runPlay(host, { blocks, title, onExit }) {
       nextName.textContent = s.nextStep?.peek ?? '';
       nextShape.replaceChildren(...[s.nextStep?.preview?.()].filter(Boolean));
     }
-    if (previewedPhases !== s.phases) {
-      previewedPhases = s.phases;
-      phases.replaceChildren(...(s.phases ?? []).map((name) => h('li', {}, name)));
+    const phased = s.phases ?? (s.intro ? s.nextStep?.phases : null); // the count-in already shows the stepper
+    if (previewedPhases !== phased) {
+      previewedPhases = phased;
+      phases.replaceChildren(...(phased ?? []).map((name) => h('li', {}, name)));
     }
-    phases.hidden = !s.phases;
-    nextUp.hidden = Boolean(s.phases) || !s.nextStep;
-    [...phases.children].forEach((li, i) => li.classList.toggle('is-on', i === s.phase(b)));
+    phases.hidden = !phased;
+    nextUp.hidden = Boolean(phased) || !s.nextStep;
+    [...phases.children].forEach((li, i) => li.classList.toggle('is-on', i === s.phase?.(b)));
     // Quiet until the change is close, then it lights up and counts the beats down.
     const left = s.beats - b;
-    const soon = left <= (s.lead ?? (s.beats >= 8 ? 4 : Math.max(1, s.beats / 2)));
+    const same = s.nextStep?.peek === value(s.title, b); // the same chord again is not a change to brace for
+    const soon = !same && left <= (s.lead ?? (s.beats >= 8 ? 4 : Math.max(1, s.beats / 2)));
     nextUp.classList.toggle('is-soon', soon);
-    nextWhen.textContent = left > 8 ? `in ${Math.ceil(left / 4)} bars` : left === 1 ? 'in 1 beat' : `in ${left} beats`;
+    nextWhen.textContent = left > 8 && s.beats % 4 === 0 ? `in ${Math.ceil(left / 4)} bars` : left === 1 ? 'in 1 beat' : `in ${left} beats`;
   }
 
   // A bar of clicks before playing: at the start, between session blocks, and after a pause.
@@ -165,7 +168,7 @@ export function runPlay(host, { blocks, title, onExit }) {
     upcoming = mode().next(opts, e, memo);
     if (!shown) heading.textContent = blocks.length > 1 ? title : mode().title;
     resumeInto = null;
-    step = countIn(blocks.length > 1 ? mode().title : 'Ready', `First up: ${upcoming.peek}`, upcoming);
+    step = countIn(blocks.length > 1 ? mode().title : 'Ready', `First up: ${upcoming.opener ?? upcoming.peek}`, upcoming);
     beat = 0;
   }
 
@@ -176,7 +179,10 @@ export function runPlay(host, { blocks, title, onExit }) {
       const b = beat;
       const length = 60 / prefs.bpm;
       s.mode ??= mode();
-      if (b === 0) s.playedAt = blockPlayed;
+      if (b === 0) {
+        s.playedAt = blockPlayed;
+        s.limit = limit();
+      }
       if (prefs.click) click(nextBeatAt, (b + (s.offset ?? 0)) % 4 === 0);
       s.sound?.(b, nextBeatAt);
       pending.push(setTimeout(() => show(s, b), Math.max(0, (nextBeatAt - audioNow()) * 1000)));
@@ -198,7 +204,9 @@ export function runPlay(host, { blocks, title, onExit }) {
       } else if (blockPlayed < limit() || s.intro) {
         step = upcoming;
         upcoming = mode().next(opts, e, memo);
-        step.nextStep = upcoming;
+        // The last prompt of a block is followed by the next block, or by the end of the session.
+        const last = blockPlayed + (step.beats * 60) / prefs.bpm >= limit();
+        step.nextStep = !last ? upcoming : { peek: blocks[block + 1]?.mode.title ?? 'Done' };
         beat = 0;
       } else if (block + 1 < blocks.length) {
         block++;
@@ -244,6 +252,7 @@ export function runPlay(host, { blocks, title, onExit }) {
   function pause() {
     stopClock();
     setPaused(true);
+    bar.style.width = getComputedStyle(bar).width; // freeze it where it is
     bar.style.transition = 'none';
   }
 
@@ -252,6 +261,7 @@ export function runPlay(host, { blocks, title, onExit }) {
     setPaused(false);
     if (!step.intro) {
       resumeInto = step;
+      resumeInto.reset?.(); // it starts over: forget what was heard the first time
       step = countIn('Ready', `Back to ${resumeInto.peek}`, resumeInto);
       step.mode = resumeInto.mode;
     }
@@ -259,12 +269,14 @@ export function runPlay(host, { blocks, title, onExit }) {
   }
 
   function setTempo(change) {
+    document.activeElement?.blur?.(); // so the space bar still pauses
     prefs.bpm = Math.max(40, Math.min(200, prefs.bpm + change));
     save('play', prefs);
     drawTransport();
   }
 
   function toggleClick() {
+    document.activeElement?.blur?.();
     prefs.click = !prefs.click;
     save('play', prefs);
     drawTransport();
@@ -326,9 +338,11 @@ export function runPlay(host, { blocks, title, onExit }) {
     drawTransport();
   }
 
+  // Changing an option starts the block over; just looking carries on from where it was.
   function options() {
     pause();
-    openOptions(mode(), restart);
+    const before = JSON.stringify(optionsFor(mode(), env()));
+    openOptions(mode(), () => (JSON.stringify(optionsFor(mode(), env())) === before ? resume() : restart()));
   }
 
   async function keepAwake() {

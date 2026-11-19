@@ -64,7 +64,7 @@ const triadOf = (type) => TRIADS.find((t) => [1, 2].every((i) => t.formula[i].se
 //   offset        the beat of the bar this chord starts on, for chords that share a bar
 //   memo.pass     how many times round so far: "Move up each time round" uses it
 //   below         optional () => element drawn under the chord, such as a song chart
-export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, opts, e, memo, below }) {
+export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, opener, opts, e, memo, below }) {
   const tuning = e.tuning.midi;
   const where = opts.position === 'travel' ? TRAVEL[(memo.pass ?? 0) % 3] : opts.position;
   const [from, to] = WINDOW[where];
@@ -107,6 +107,7 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
     offset,
     title,
     peek,
+    opener,
     detail: () => [detail, caption, memo.listening && memo.changes ? `${memo.landed ?? 0} of ${memo.changes} ${single ? 'landed' : 'on time'}` : ''].filter(Boolean).join(' · '),
     // A small copy of the grip for the next-up panel, so the change can be seen coming.
     preview: () => (!single && frets ? ChordDiagram({ frets, info: toneInfo(tuning, chord.tones, e.labels), lefty: e.lefty, scale: 0.72, label: `Next: ${chord.name}` }) : null),

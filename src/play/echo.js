@@ -88,6 +88,7 @@ export default {
       phase: (b) => Math.floor(b / 4),
       title: (b) => (b >= 8 && memo.listening ? (matched() ? 'You had it' : 'Not quite') : PHASES[Math.floor(b / 4)][0]),
       detail: (b) => PHASES[Math.floor(b / 4)][1],
+      reset: () => void (played.length = 0),
       hear(midi, b) {
         if (b >= 4 && b < 8 && played[played.length - 1] !== midi) played.push(midi);
       },

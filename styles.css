@@ -405,6 +405,9 @@ button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit
 .beats i { width: 14px; height: 14px; border-radius: 50%; background: var(--sunken); }
 .beats i.is-on { background: var(--ink); animation: beat 0.28s ease-out; }
 .beats i:first-child.is-on { background: var(--root); }
+/* fixed heights, so the picture below does not jump when the words change */
+.play .prompt-main { display: grid; place-items: center; min-height: clamp(48px, 16vw, 72px); }
+.play .prompt-sub { min-height: 1.45em; }
 .play .prompt-main.pop { animation: pop 0.26s var(--spring); }
 .count-in { text-align: center; font: 750 120px/1 var(--font-display); letter-spacing: -0.04em; color: var(--muted); animation: count 0.3s var(--spring); }
 .hunt-string { text-align: center; margin-bottom: 10px; font: 700 22px/1.2 var(--font-display); }
