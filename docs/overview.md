@@ -19,7 +19,7 @@ sites, and Claude artifacts are not allowed to ask for it. Everything else behav
 
 | Tab | What it does |
 | --- | --- |
-| **Play** | Guitar in hand, phone propped up. A click keeps time and prompts move on by themselves. *Note hunt*, *Changes*, *Songs*, *Echo*, or all four back to back as a 15-minute daily session. With the microphone on, single notes and strummed chords are heard and checked: a chord counts as on time when it rings clean within two beats of the change. |
+| **Play** | Guitar in hand, phone propped up. A click keeps time and prompts move on by themselves; a panel shows what comes next (the grip, for chords) and counts down the last bar before each change. *Note hunt*, *Changes*, *Songs*, *Echo*, or all four back to back as a 15-minute daily session. With the microphone on, single notes and strummed chords are heard and checked: a chord counts as on time when it rings clean within two beats of the change. |
 | **Train** | Seven drills plus *Today's mix*, an interleaved round across all of them. Drills adapt: items you miss come back more often. A heat map shows which spots on the neck you know. |
 | **Neck** | Any scale or arpeggio from any root across the whole neck, labelled by degree or note name. |
 | **Chords** | *Voicings*: every playable grip for a chord, generated for the current tuning. *Triads*: the three inversions on any string set. *Identify*: tap notes on the neck, get the chord name. |

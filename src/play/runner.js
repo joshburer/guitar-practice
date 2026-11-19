@@ -37,7 +37,12 @@ export function runPlay(host, { blocks, title, onExit }) {
   const main = h('h2', { class: 'prompt-main' });
   const sub = h('p', { class: 'prompt-sub' });
   const stage = h('div', { class: 'stage' });
-  const nextUp = h('p', { class: 'next-up' });
+  // What comes next: its name and, for chords, the grip to move to. It lights up as the change gets close.
+  const nextName = h('b', { class: 'next-name' });
+  const nextWhen = h('span', { class: 'next-when' });
+  const nextShape = h('div', { class: 'next-shape' });
+  const nextUp = h('div', { class: 'next-up', 'aria-live': 'polite' }, nextShape, h('div', { class: 'next-text' }, h('span', { class: 'next-label' }, 'Next'), nextName, nextWhen));
+  let previewed = null; // the step whose follower is drawn in nextUp
   const tempo = h('b', {});
   const pauseBtn = h('button', { type: 'button', class: 'btn btn-primary', onclick: () => (paused ? resume() : pause()) });
   const clickBtn = h('button', { type: 'button', class: 'btn btn-toggle', onclick: toggleClick }, 'Click');
@@ -87,12 +92,27 @@ export function runPlay(host, { blocks, title, onExit }) {
     main.textContent = text;
     main.classList.toggle('prompt-long', text.length > 7);
     sub.textContent = value(s.detail, b) ?? '';
-    nextUp.textContent = s.next ? `Next: ${s.next}` : '';
     s.draw(stage, b);
     const inBar = (b + (s.offset ?? 0)) % 4;
     [...beats.children].forEach((dot, i) => dot.classList.toggle('is-on', i === inBar));
+    showNext(s, b);
     const left = limit() - s.playedAt;
     heading.textContent = blocks.length > 1 ? `${title} · ${s.mode.title} · ${clock(Math.max(0, left))}` : s.mode.title;
+  }
+
+  // The next-up panel. The last bar before a change (the last beat or two of a short chord) counts down to it.
+  function showNext(s, b) {
+    if (previewed !== s) {
+      previewed = s;
+      nextName.textContent = s.nextStep?.peek ?? '';
+      nextShape.replaceChildren(...[s.nextStep?.preview?.()].filter(Boolean));
+    }
+    nextUp.hidden = !s.nextStep;
+    const left = s.beats - b;
+    const soon = left <= (s.beats >= 8 ? 4 : Math.max(1, s.beats / 2));
+    nextUp.classList.toggle('is-soon', soon);
+    beats.classList.toggle('is-soon', soon);
+    nextWhen.textContent = soon ? (left === 1 ? 'Change now' : `Change in ${left}`) : left > 8 ? `in ${Math.ceil(left / 4)} bars` : `in ${left} beats`;
   }
 
   // Count in, then the mode's first step.
@@ -108,6 +128,7 @@ export function runPlay(host, { blocks, title, onExit }) {
       title: blocks.length > 1 ? mode().title : 'Ready',
       detail: `First up: ${upcoming.peek}`,
       draw: (el, b) => el.replaceChildren(h('p', { class: 'count-in' }, b + 1)),
+      nextStep: upcoming,
     };
     beat = 0;
   }
@@ -137,7 +158,7 @@ export function runPlay(host, { blocks, title, onExit }) {
       if (blockPlayed < limit() || s.intro) {
         step = upcoming;
         upcoming = mode().next(opts, e, memo);
-        step.next = upcoming.peek;
+        step.nextStep = upcoming;
         beat = 0;
       } else if (block + 1 < blocks.length) {
         block++;

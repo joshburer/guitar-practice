@@ -108,6 +108,8 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
     title,
     peek,
     detail: () => [detail, caption, memo.listening && memo.changes ? `${memo.landed ?? 0} of ${memo.changes} ${single ? 'landed' : 'on time'}` : ''].filter(Boolean).join(' · '),
+    // A small copy of the grip for the next-up panel, so the change can be seen coming.
+    preview: () => (!single && frets ? ChordDiagram({ frets, info: toneInfo(tuning, chord.tones, e.labels), lefty: e.lefty, scale: 0.72, label: `Next: ${chord.name}` }) : null),
     draw(el) {
       if (drawn) return;
       drawn = true;
