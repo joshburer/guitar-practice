@@ -13,7 +13,7 @@ export default {
   listens: true,
   title: 'Note hunt',
   blurb: 'A note is called. Find it and play it before the answer sounds.',
-  tip: 'Say the note name as you play it. You get a few clicks to find it (set how many under "Time to find it"), then the answer sounds: if what you played matches, you had it. Too easy? Raise the tempo or hide the answer. With the mic on, your notes are checked and scored for you, and misses feed the heat map on the Train tab.',
+  tip: 'Say the note name as you play it. Each note gets one to four bars ("Time per note"): find it, then the answer sounds on the last two beats: if what you played matches, you had it. Too easy? Raise the tempo or hide the answer. With the mic on, your notes are checked and scored for you, and misses feed the heat map on the Train tab.',
   options: [
     {
       id: 'task',
@@ -27,13 +27,14 @@ export default {
     { ...STRINGS, label: 'String (one-string hunts)' },
     NOTES,
     {
-      id: 'find',
-      label: 'Time to find it',
-      default: '4',
+      id: 'bars',
+      label: 'Time per note',
+      default: '2',
       choices: [
-        { value: '2', label: '2 beats' },
-        { value: '4', label: '4 beats' },
-        { value: '8', label: '8 beats' },
+        { value: '1', label: '1 bar' },
+        { value: '2', label: '2 bars' },
+        { value: '3', label: '3 bars' },
+        { value: '4', label: '4 bars' },
       ],
     },
     {
@@ -50,7 +51,10 @@ export default {
   next(opts, e, memo) {
     const tuning = e.tuning.midi;
     const reveal = opts.answer === 'on';
-    const find = Number(opts.find ?? 4); // beats to find the note before the answer sounds
+    // Each note lasts whole bars, so the next one always arrives on a downbeat. The answer takes the last two beats
+    // (all six strings: the last six, one string per beat, so that hunt is never shorter than two bars).
+    const bars = Number(opts.bars ?? 2);
+    const beatsFor = (answer) => Math.max(bars * 4, Math.ceil((answer + 2) / 4) * 4);
     // The string to play on, in big type above the neck: it is half the question.
     const neck = (el, config, where) =>
       el.replaceChildren(...[where && h('p', { class: 'hunt-string' }, where), Fretboard({ tuning, from: 0, to: 12, lefty: e.lefty, ...config })].filter(Boolean));
@@ -61,8 +65,9 @@ export default {
       const name = spellPc(p, e);
       const frets = tuning.map((open) => mod(p - open, 12));
       const got = new Set(); // strings the microphone has heard played right
+      const find = beatsFor(6) - 6; // beats to find it before the answer starts
       return {
-        beats: find + 6,
+        beats: beatsFor(6),
         title: name,
         detail: (b) => (b < find ? 'every string, low to high' : `now the ${stringLabel(e, b - find)}`),
         peek: `${name} on every string`,
@@ -99,11 +104,12 @@ export default {
     const p = pcAt(tuning, string, fret);
     const name = spellPc(p, e);
     const spots = range(0, 12).filter((f) => pcAt(tuning, string, f) === p);
+    const find = beatsFor(2) - 2; // beats to find it before the answer sounds
     let started = 0;
     let found = null; // seconds it took, once the microphone hears the right pitch
     let scored = false;
     return {
-      beats: find + 2,
+      beats: beatsFor(2),
       title: name,
       detail: () => (found == null ? '' : `Found in ${found.toFixed(1)}s`), // the string is shown big above the neck
       peek: `${name}, ${stringLabel(e, string)}`,
