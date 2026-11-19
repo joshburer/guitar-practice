@@ -29,7 +29,7 @@ export default {
   group: 'Chords',
   title: 'Name the chord',
   blurb: 'Work out a chord from its notes.',
-  tip: 'Find the root first, then read the 3rd: major or minor decides most of it. From there the 5th and 7th are small adjustments. With a guitar in hand, play the shape and say each chord tone.',
+  tip: 'Find the root first, then read the 3rd.',
   options: [
     CHORD_SET_OPTION,
     {
@@ -54,7 +54,7 @@ export default {
   render(q, ui) {
     const { tuning, lefty, accidentals } = ui.env;
     const types = CHORD_SETS[ui.opts.set].map(chordById);
-    ui.prompt('Name the chord', q.shape ? 'Read the notes off the shape. Tap it to hear it.' : 'These notes, in any order');
+    ui.prompt('Name the chord', q.shape ? 'Tap the shape to hear it' : 'These notes, in any order');
 
     const draw = (revealed) => {
       if (q.shape) {

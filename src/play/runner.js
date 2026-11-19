@@ -1,8 +1,8 @@
-import { h } from '../ui/dom.js';
+import { h, replay } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { env } from '../state/settings.js';
 import { load, save } from '../state/store.js';
-import { logPlay } from '../state/progress.js';
+import { logPlay, playedToday } from '../state/progress.js';
 import { optionsFor, openOptions } from '../drills/session.js';
 import { unlock, audioNow, click } from '../audio/synth.js';
 import { listen } from '../audio/listen.js';
@@ -24,6 +24,7 @@ export function runPlay(host, { blocks, title, onExit }) {
   let totalPlayed = 0;
   let unlogged = 0;
   let e, opts, memo, step, upcoming, beat, nextBeatAt, ticker, wake;
+  let resumeInto = null; // the step to go back to after the count-in that follows a pause
   let paused = false;
   let pending = [];
   let shown = null; // the step and beat currently on screen
@@ -34,6 +35,9 @@ export function runPlay(host, { blocks, title, onExit }) {
 
   const heading = h('p', { class: 'drill-title' });
   const beats = h('div', { class: 'beats', 'aria-hidden': 'true' }, [0, 1, 2, 3].map(() => h('i')));
+  // How far through the current prompt we are: it fills as the change approaches.
+  const bar = h('i');
+  const progress = h('div', { class: 'progress', 'aria-hidden': 'true' }, bar);
   const main = h('h2', { class: 'prompt-main' });
   const sub = h('p', { class: 'prompt-sub' });
   const stage = h('div', { class: 'stage' });
@@ -42,7 +46,10 @@ export function runPlay(host, { blocks, title, onExit }) {
   const nextWhen = h('span', { class: 'next-when' });
   const nextShape = h('div', { class: 'next-shape' });
   const nextUp = h('div', { class: 'next-up', 'aria-live': 'polite' }, nextShape, h('div', { class: 'next-text' }, h('span', { class: 'next-label' }, 'Next'), nextName, nextWhen));
+  // Modes that work in phases (Echo: listen, your turn, check) show where they are instead.
+  const phases = h('ol', { class: 'phases', hidden: true });
   let previewed = null; // the step whose follower is drawn in nextUp
+  let previewedPhases = null;
   const tempo = h('b', {});
   const pauseBtn = h('button', { type: 'button', class: 'btn btn-primary', onclick: () => (paused ? resume() : pause()) });
   const clickBtn = h('button', { type: 'button', class: 'btn btn-toggle', onclick: toggleClick }, 'Click');
@@ -59,10 +66,12 @@ export function runPlay(host, { blocks, title, onExit }) {
       h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Options', onclick: options }, icon('settings')),
     ),
     beats,
+    progress,
     h('div', { class: 'prompt' }, main, sub),
     stage,
-    nextUp,
     micNote,
+    nextUp,
+    phases,
     h(
       'div',
       { class: 'transport' },
@@ -86,15 +95,32 @@ export function runPlay(host, { blocks, title, onExit }) {
   function show(s, b) {
     // A note still ringing as a new prompt arrives counts for it: a held common tone is a fine way to land.
     if (b === 0 && shown?.s !== s && sounding != null) s.hear?.(sounding, 0);
-    if (shown?.s !== s) micNote.classList.remove('is-ok', 'is-bad');
+    const fresh = shown?.s !== s;
+    const moved = fresh || shown.b !== b; // a new beat, not just the microphone redrawing this one
+    if (fresh) {
+      micNote.classList.remove('is-ok', 'is-bad');
+      delete stage.dataset.sig; // steps use this to skip redrawing a picture that has not changed
+    }
     shown = { s, b };
     const text = value(s.title, b);
-    main.textContent = text;
-    main.classList.toggle('prompt-long', text.length > 7);
+    if (main.textContent !== text || fresh) {
+      main.textContent = text;
+      main.classList.toggle('prompt-long', text.length > 7);
+      replay(main, 'pop');
+    }
     sub.textContent = value(s.detail, b) ?? '';
     s.draw(stage, b);
-    const inBar = (b + (s.offset ?? 0)) % 4;
-    [...beats.children].forEach((dot, i) => dot.classList.toggle('is-on', i === inBar));
+    if (moved) {
+      const inBar = (b + (s.offset ?? 0)) % 4;
+      [...beats.children].forEach((dot, i) => dot.classList.toggle('is-on', i === inBar));
+      if (b === 0) {
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        void bar.getBoundingClientRect();
+      }
+      bar.style.transition = `width ${60 / prefs.bpm}s linear`;
+      bar.style.width = `${((b + 1) / s.beats) * 100}%`;
+    }
     showNext(s, b);
     const left = limit() - s.playedAt;
     heading.textContent = blocks.length > 1 ? `${title} · ${s.mode.title} · ${clock(Math.max(0, left))}` : s.mode.title;
@@ -107,13 +133,29 @@ export function runPlay(host, { blocks, title, onExit }) {
       nextName.textContent = s.nextStep?.peek ?? '';
       nextShape.replaceChildren(...[s.nextStep?.preview?.()].filter(Boolean));
     }
-    nextUp.hidden = !s.nextStep;
+    if (previewedPhases !== s.phases) {
+      previewedPhases = s.phases;
+      phases.replaceChildren(...(s.phases ?? []).map((name) => h('li', {}, name)));
+    }
+    phases.hidden = !s.phases;
+    nextUp.hidden = Boolean(s.phases) || !s.nextStep;
+    [...phases.children].forEach((li, i) => li.classList.toggle('is-on', i === s.phase(b)));
+    // Quiet until the change is close, then it lights up and counts the beats down.
     const left = s.beats - b;
-    const soon = left <= (s.beats >= 8 ? 4 : Math.max(1, s.beats / 2));
+    const soon = left <= (s.lead ?? (s.beats >= 8 ? 4 : Math.max(1, s.beats / 2)));
     nextUp.classList.toggle('is-soon', soon);
-    beats.classList.toggle('is-soon', soon);
-    nextWhen.textContent = soon ? (left === 1 ? 'Change now' : `Change in ${left}`) : left > 8 ? `in ${Math.ceil(left / 4)} bars` : `in ${left} beats`;
+    nextWhen.textContent = left > 8 ? `in ${Math.ceil(left / 4)} bars` : left === 1 ? 'in 1 beat' : `in ${left} beats`;
   }
+
+  // A bar of clicks before playing: at the start, between session blocks, and after a pause.
+  const countIn = (title, detail, nextStep) => ({
+    intro: true,
+    beats: 4,
+    title,
+    detail,
+    draw: (el, b) => el.replaceChildren(h('p', { class: 'count-in' }, b + 1)),
+    nextStep,
+  });
 
   // Count in, then the mode's first step.
   function prepare() {
@@ -122,14 +164,8 @@ export function runPlay(host, { blocks, title, onExit }) {
     memo = { listening: Boolean(stopMic) };
     upcoming = mode().next(opts, e, memo);
     if (!shown) heading.textContent = blocks.length > 1 ? title : mode().title;
-    step = {
-      intro: true,
-      beats: 4,
-      title: blocks.length > 1 ? mode().title : 'Ready',
-      detail: `First up: ${upcoming.peek}`,
-      draw: (el, b) => el.replaceChildren(h('p', { class: 'count-in' }, b + 1)),
-      nextStep: upcoming,
-    };
+    resumeInto = null;
+    step = countIn(blocks.length > 1 ? mode().title : 'Ready', `First up: ${upcoming.peek}`, upcoming);
     beat = 0;
   }
 
@@ -155,7 +191,11 @@ export function runPlay(host, { blocks, title, onExit }) {
       // End of a step: carry on, move to the next block of the session, or finish.
       logPlay(unlogged);
       unlogged = 0;
-      if (blockPlayed < limit() || s.intro) {
+      if (s.intro && resumeInto) {
+        step = resumeInto;
+        resumeInto = null;
+        beat = 0;
+      } else if (blockPlayed < limit() || s.intro) {
         step = upcoming;
         upcoming = mode().next(opts, e, memo);
         step.nextStep = upcoming;
@@ -204,11 +244,18 @@ export function runPlay(host, { blocks, title, onExit }) {
   function pause() {
     stopClock();
     setPaused(true);
+    bar.style.transition = 'none';
   }
 
+  // Count back in, so there is time to get hands on the guitar; then the prompt that was playing starts over.
   function resume() {
     setPaused(false);
-    startClock(); // the current prompt starts over
+    if (!step.intro) {
+      resumeInto = step;
+      step = countIn('Ready', `Back to ${resumeInto.peek}`, resumeInto);
+      step.mode = resumeInto.mode;
+    }
+    startClock();
   }
 
   function setTempo(change) {
@@ -255,10 +302,10 @@ export function runPlay(host, { blocks, title, onExit }) {
   async function startMic() {
     try {
       stopMic = await listen(heard, heardChord);
-      micNote.textContent = 'Listening: play and it is checked for you';
+      micNote.textContent = 'Listening';
     } catch {
       stopMic = null;
-      if (prefs.mic) micNote.textContent = 'No microphone here. It works when the app runs on its own site and you allow access.';
+      if (prefs.mic) micNote.textContent = 'No microphone access here';
       prefs.mic = false; // do not ask again until the Mic button is tapped
       save('play', prefs);
     }
@@ -296,6 +343,13 @@ export function runPlay(host, { blocks, title, onExit }) {
     if (document.hidden && !paused) pause();
   };
   document.addEventListener('visibilitychange', onVisibility);
+  // Space pauses and resumes, for anyone at a keyboard.
+  const onKey = (event) => {
+    if (event.key !== ' ' || event.target.closest?.('button, select, .sheet') || document.querySelector('.sheet-backdrop')) return;
+    event.preventDefault();
+    paused ? resume() : pause();
+  };
+  document.addEventListener('keydown', onKey);
 
   function cleanUp() {
     stopClock();
@@ -305,6 +359,7 @@ export function runPlay(host, { blocks, title, onExit }) {
     stopMic = null;
     wake?.release?.().catch(() => {});
     document.removeEventListener('visibilitychange', onVisibility);
+    document.removeEventListener('keydown', onKey);
   }
 
   function exit() {
@@ -320,8 +375,8 @@ export function runPlay(host, { blocks, title, onExit }) {
         { class: 'drill summary' },
         h('p', { class: 'eyebrow' }, title),
         h('h2', { class: 'score' }, `${Math.round(totalPlayed / 60)}`, h('span', {}, ' min')),
-        h('p', { class: 'muted' }, 'Session done. Tomorrow, nudge one thing: five more beats a minute, a new key, or a different part of the neck.'),
-        h('div', { class: 'summary-actions' }, h('button', { type: 'button', class: 'btn btn-primary', onclick: onExit }, 'Done')),
+        h('p', { class: 'clean' }, icon('check', 18), `Session done · ${Math.round(playedToday() / 60)} min today`),
+        h('div', { class: 'summary-actions summary-one' }, h('button', { type: 'button', class: 'btn btn-primary', onclick: onExit }, 'Done')),
       ),
     );
   }

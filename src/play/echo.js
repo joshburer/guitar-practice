@@ -6,9 +6,9 @@ import { sample } from '../util.js';
 
 const SCALE_IDS = ['minor-pentatonic', 'major-pentatonic', 'blues', 'major', 'minor'];
 const PHASES = [
-  ['Listen', 'the phrase starts on the root'],
+  ['Listen', 'starts on the root'],
   ['Your turn', 'play it back'],
-  ['Check', 'play along with the answer'],
+  ['Check', 'play along'],
 ];
 
 // Every scale note inside one hand position, low to high.
@@ -33,8 +33,8 @@ export default {
   id: 'play-echo',
   listens: true,
   title: 'Echo',
-  blurb: 'Hear a short phrase, play it back, then check it.',
-  tip: 'Sing the phrase before you reach for it. Every phrase starts on the root and stays inside one position, so the question is only which way it moved and how far. This is the bridge between your ear and your hands.',
+  blurb: 'Hear a phrase, play it back.',
+  tip: 'Sing the phrase before you reach for it.',
   options: [
     {
       id: 'scale',
@@ -84,6 +84,8 @@ export default {
     };
     return {
       beats: 12,
+      phases: PHASES.map((p) => p[0]),
+      phase: (b) => Math.floor(b / 4),
       title: (b) => (b >= 8 && memo.listening ? (matched() ? 'You had it' : 'Not quite') : PHASES[Math.floor(b / 4)][0]),
       detail: (b) => PHASES[Math.floor(b / 4)][1],
       hear(midi, b) {
@@ -93,6 +95,8 @@ export default {
       draw(el, b) {
         // Only the starting note until the check, then the phrase appears note by note.
         const shown = b < 8 ? 1 : Math.min(phrase.length, b - 7);
+        if (el.dataset.sig === String(shown)) return;
+        el.dataset.sig = shown;
         el.replaceChildren(Fretboard({ tuning, from, to: from + 6, lefty: e.lefty, dots: phrase.slice(0, shown).map(dot) }));
       },
       sound(b, at_) {

@@ -12,8 +12,8 @@ export default {
   id: 'play-note-hunt',
   listens: true,
   title: 'Note hunt',
-  blurb: 'A note is called. Find it and play it before the answer sounds.',
-  tip: 'Say the note name as you play it. You get a few clicks to find it (set how many under "Time to find it"), then the answer sounds: if what you played matches, you had it. Too easy? Raise the tempo or hide the answer. With the mic on, your notes are checked and scored for you, and misses feed the heat map on the Train tab.',
+  blurb: 'Find the called note before the answer sounds.',
+  tip: 'Say the note name out loud as you play it.',
   options: [
     {
       id: 'task',
@@ -52,8 +52,12 @@ export default {
     const reveal = opts.answer === 'on';
     const find = Number(opts.find ?? 4); // beats to find the note before the answer sounds
     // The string to play on, in big type above the neck: it is half the question.
-    const neck = (el, config, where) =>
+    const neck = (el, config, where) => {
+      const sig = JSON.stringify([config, where]);
+      if (el.dataset.sig === sig) return; // nothing new this beat
+      el.dataset.sig = sig;
       el.replaceChildren(...[where && h('p', { class: 'hunt-string' }, where), Fretboard({ tuning, from: 0, to: 12, lefty: e.lefty, ...config })].filter(Boolean));
+    };
 
     if (opts.task === 'all') {
       const pcs = range(0, 11).filter((p) => p !== memo.last && (opts.notes === 'all' || isNatural(p)));
@@ -63,6 +67,7 @@ export default {
       const got = new Set(); // strings the microphone has heard played right
       return {
         beats: find + 6,
+        lead: 2,
         title: name,
         detail: (b) => (b < find ? 'every string, low to high' : `now the ${stringLabel(e, b - find)}`),
         peek: `${name} on every string`,
@@ -104,6 +109,7 @@ export default {
     let scored = false;
     return {
       beats: find + 2,
+      lead: 2, // the next note is announced once this one's answer is out
       title: name,
       detail: () => (found == null ? '' : `Found in ${found.toFixed(1)}s`), // the string is shown big above the neck
       peek: `${name}, ${stringLabel(e, string)}`,

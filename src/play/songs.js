@@ -25,8 +25,8 @@ export default {
   id: 'play-songs',
   listens: true,
   title: 'Songs',
-  blurb: `Play through a whole tune: ${SONGS.length} blues forms, traditional songs and public-domain standards.`,
-  tip: 'Learn a tune in layers. Roots first, to hear the form. Then chord shapes, then triads on the top strings, then the 3rds and 7ths, then all the chord tones. Then do it again in another part of the neck, and in another key. Reading the chart as numbers is what makes a tune portable.',
+  blurb: `Play through a whole tune: ${SONGS.length} to pick from.`,
+  tip: 'Learn a tune in layers: roots, chord shapes, triads, 3rds and 7ths, then every chord tone.',
   options: [
     {
       id: 'song',

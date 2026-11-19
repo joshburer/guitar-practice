@@ -16,4 +16,20 @@ function fill(el, props, kids) {
 }
 
 export const h = (tag, props, ...kids) => fill(document.createElement(tag), props, kids);
+// Run a CSS animation again from the start: replay(el, 'pop')
+export function replay(el, name) {
+  el.classList.remove(name);
+  void el.getBoundingClientRect();
+  el.classList.add(name);
+}
+
+// A short buzz on phones that support it.
+export const buzz = (pattern) => {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* not allowed here */
+  }
+};
+
 export const s = (tag, props, ...kids) => fill(document.createElementNS(SVG_NS, tag), props, kids);

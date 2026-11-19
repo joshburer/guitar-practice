@@ -88,7 +88,7 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
   let wanted = chord.tones.filter((t) => !WANTED[opts.show] || WANTED[opts.show].includes(t.interval.role));
   if (!wanted.length) wanted = chord.tones;
   const targets = new Set(wanted.map((t) => pc(t.note)));
-  let drawn = false;
+  let counted = false;
   let landed = false;
 
   // Chord views with the microphone on: the grip asked for (the triad itself in Triads), judged as it rings.
@@ -111,9 +111,10 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
     // A small copy of the grip for the next-up panel, so the change can be seen coming.
     preview: () => (!single && frets ? ChordDiagram({ frets, info: toneInfo(tuning, chord.tones, e.labels), lefty: e.lefty, scale: 0.72, label: `Next: ${chord.name}` }) : null),
     draw(el) {
-      if (drawn) return;
-      drawn = true;
-      if (memo.listening) memo.changes = (memo.changes ?? 0) + 1;
+      if (el.dataset.sig === 'chord') return;
+      el.dataset.sig = 'chord';
+      if (memo.listening && !counted) memo.changes = (memo.changes ?? 0) + 1;
+      counted = true;
       let picture;
       if (single) {
         const dots =
@@ -124,7 +125,7 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
       } else if (frets) {
         picture = h('div', { class: 'center' }, ChordDiagram({ frets, info: toneInfo(tuning, chord.tones, e.labels), lefty: e.lefty, scale: below ? 1.35 : 1.7, label: chord.name }));
       } else {
-        picture = h('p', { class: 'muted center' }, 'No comfortable grip in this tuning: play the chord tones.');
+        picture = h('p', { class: 'muted center' }, 'No grip in this tuning: play the chord tones');
       }
       el.replaceChildren(...[picture, below?.()].filter(Boolean));
     },
@@ -148,7 +149,7 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
       : (frame, b) => {
           if (!frame) {
             streak = 0;
-            return landed ? null : { text: 'Listening: strum the chord' };
+            return landed ? null : { text: 'Strum the chord' };
           }
           reading = blend(reading, frame, 0.35);
           const judged = judgeChord(reading, pc(asked.root), asked.type);
@@ -158,7 +159,7 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
             landed = b < onTime ? 'on time' : 'late';
             if (landed === 'on time') memo.landed = (memo.landed ?? 0) + 1;
           }
-          if (judged.clean) return { text: landed === 'late' ? `${asked.name}: clean, but late. Change on the click` : `${asked.name}: clean`, ok: true };
+          if (judged.clean) return { text: landed === 'late' ? `${asked.name}: clean, but late` : `${asked.name}: clean`, ok: true };
           if (landed) return null; // got it already: a fading chord is not a mistake
           const heard = spellChord(judged.best.root, judged.best.type).name;
           const gone = judged.missing.map(spelled).filter(Boolean)[0];

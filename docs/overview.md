@@ -72,7 +72,7 @@ export default {
   group: 'Fretboard',        // heading on the Train tab
   title: 'My drill',
   blurb: 'One line for the list.',
-  tip: 'Coaching shown in the options sheet and after a round.',
+  tip: 'One sentence of coaching, shown in the options sheet.',
   neck: true,                // optional: keep separate progress per tuning
   options: [{ id, label, default, choices: [{ value, label }] }],
 
@@ -110,8 +110,11 @@ next(opts, env, memo) {      // memo persists between calls; memo.listening is t
     beats: 4,                // how long this step lasts
     title: 'F♯',             // the big prompt: a string, or (beat) => string
     detail: 'on the 5th string',
-    peek: 'F♯, 5th string',  // shown as "Next: …" during the step before
-    draw(stage, beat) {},    // called on every beat: reveal the answer on beat 2, say
+    peek: 'F♯, 5th string',  // shown in the Next panel during the step before
+    lead: 2,                 // optional: beats before the end at which the Next panel lights up
+    phases: ['Listen', 'Your turn'], // optional, with phase(beat): show a stepper in place of the Next panel
+    draw(stage, beat) {},    // called on every beat: reveal the answer on beat 2, say. To skip a redraw when nothing
+                             // changed, keep a signature in stage.dataset.sig (the runner clears it for each new step)
     sound(beat, at) {},      // schedule audio for a beat: pluck(midi, 0, { at })
     hear(midi, beat) {},     // optional: a note the microphone heard
     hearChord(reading, beat) {}, // optional: what chord is ringing (audio/chroma.js); return { text, ok } to show
@@ -125,7 +128,7 @@ it (roots, shapes, triads, 3rds and 7ths, chord tones, in any position).
 **A tab.** Write `src/views/my-view.js` exporting `(root, app) => { root.append(...) }` and add it to `TABS` in
 `src/app.js` (plus an icon path in `src/ui/icons.js`).
 
-**Coaching copy** lives in each drill's `tip` and in the short notes under each view.
+**Coaching copy** lives in each drill's `tip`. Keep it to one sentence: the screens are meant to explain themselves.
 
 ## Components
 

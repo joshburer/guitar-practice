@@ -9,7 +9,7 @@ export default {
   neck: true,
   title: 'Find the note',
   blurb: 'See a note name, tap it on the string.',
-  tip: 'Work one string at a time until it is automatic, then open up to all six. Say each note out loud as you tap it: naming is what makes it stick.',
+  tip: 'Say each note out loud as you tap it.',
   options: NECK_OPTIONS,
   pool: neckPool,
 

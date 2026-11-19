@@ -83,8 +83,14 @@ export function Choices({ choices, onPick, columns = 4 }) {
 // Bottom sheet. `build(body, rebuild)` fills it; returns a close function.
 export function openSheet(title, build, onClose) {
   const body = h('div', { class: 'sheet-body' });
+  let closed = false;
+  const onKey = (event) => event.key === 'Escape' && close();
   const close = () => {
-    backdrop.remove();
+    if (closed) return;
+    closed = true;
+    document.removeEventListener('keydown', onKey);
+    backdrop.classList.add('is-closing');
+    setTimeout(() => backdrop.remove(), 200);
     onClose?.();
   };
   const rebuild = () => {
@@ -100,5 +106,6 @@ export function openSheet(title, build, onClose) {
   const backdrop = h('div', { class: 'sheet-backdrop', onclick: (e) => e.target === backdrop && close() }, sheet);
   rebuild();
   document.body.append(backdrop);
+  document.addEventListener('keydown', onKey);
   return close;
 }

@@ -37,7 +37,6 @@ export function NeckView(root, app) {
       h('div', { class: 'title-row' }, h('h2', { class: 'title' }, title), LabelToggle()),
       Fretboard({ tuning: e.tuning.midi, from: 0, to: 15, lefty: e.lefty, label: title, dots: toneDots(e.tuning.midi, shown.tones, { to: 15, labels: e.labels }) }),
       h('div', { class: 'title-row' }, ToneRow(shown.tones), playButton('Play', () => run([...pitchesOf(shown.tones), pitchesOf(shown.tones)[0] + 12]))),
-      h('p', { class: 'muted small' }, 'Red is the root, blue the 3rd, white the 5th, gold the 7th. Aim for those on strong beats; the grey notes connect them.'),
     ),
   );
 }

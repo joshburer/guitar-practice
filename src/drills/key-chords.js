@@ -11,7 +11,7 @@ export default {
   group: 'Keys',
   title: 'Chords by number',
   blurb: 'Know the IV of A or the vi of E♭ on sight.',
-  tip: 'The pattern never changes: I, IV and V are major, ii, iii and vi are minor, vii is diminished. Learn a progression as numbers and you can play it in every key. Start round the cycle of fourths, then go random.',
+  tip: 'I, IV and V are major; ii, iii and vi are minor; vii is diminished.',
   options: [
     {
       id: 'keys',

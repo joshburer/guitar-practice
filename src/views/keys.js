@@ -47,8 +47,8 @@ export function KeysView(root, app) {
     h(
       'div',
       { class: 'actions' },
-      h('button', { type: 'button', class: 'btn', onclick: () => set({ tonic: (state.tonic + 11) % 12, degree: 0 }) }, 'Next key, up a 4th'),
-      h('button', { type: 'button', class: 'btn', onclick: () => set({ tonic: (state.tonic + 1 + Math.floor(Math.random() * 11)) % 12, degree: 0 }) }, icon('shuffle', 16), 'Random key'),
+      h('button', { type: 'button', class: 'btn', onclick: () => set({ tonic: (state.tonic + 11) % 12, degree: 0 }) }, 'Up a 4th'),
+      h('button', { type: 'button', class: 'btn', onclick: () => set({ tonic: (state.tonic + 1 + Math.floor(Math.random() * 11)) % 12, degree: 0 }) }, icon('shuffle', 16), 'Random'),
     ),
     h(
       'section',
@@ -105,10 +105,9 @@ export function KeysView(root, app) {
           ),
         ),
       ),
-      h('p', { class: 'muted small' }, 'The faint dots are the key’s scale. The bright ones are this chord’s tones: the notes to land on while it is sounding.'),
     ),
     section(
-      'Progressions to play in this key',
+      'Progressions',
       h(
         'div',
         { class: 'list' },

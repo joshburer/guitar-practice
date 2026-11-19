@@ -20,7 +20,7 @@ export default {
   neck: true,
   title: 'Interval shapes',
   blurb: 'See the 3rd, 5th and 7th around any root.',
-  tip: 'Note names get you to the right place; intervals are how you move once you are there. Learn where the 3rd and 7th sit around a root and every chord and arpeggio becomes the same few shapes.',
+  tip: 'Learn where the 3rd and 7th sit around a root: every chord is those few shapes.',
   options: [
     {
       id: 'mode',
@@ -93,7 +93,7 @@ export default {
       return;
     }
 
-    ui.prompt('Which interval?', 'From the root up to the question mark');
+    ui.prompt('Which interval?', 'From R up to ?');
     const choices = Choices({
       choices: SETS[ui.opts.set].map((id) => ({ value: id, label: INTERVALS[id].label, hint: INTERVALS[id].name })),
       columns: ui.opts.set === 'tones' ? 3 : 4,

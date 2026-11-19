@@ -19,13 +19,12 @@ export function TrainView(root, app) {
       'div',
       { class: 'mix' },
       h('p', { class: 'eyebrow' }, 'Today’s mix'),
-      h('h2', {}, '20 questions across every drill'),
-      h('p', {}, 'Mixed on purpose. Switching topics feels harder than repeating one, and it sticks better. Questions lean toward what you miss.'),
+      h('h2', {}, '20 questions, every drill'),
       h(
         'div',
         { class: 'mix-foot' },
         h('button', { type: 'button', class: 'btn btn-light', onclick: app.startMix }, 'Start'),
-        h('p', { class: 'mix-count' }, today ? `${today} answered today` : 'Nothing answered yet today'),
+        h('p', { class: 'mix-count' }, today ? `${today} answered today` : ''),
       ),
     ),
     ...groups.map((group) =>
@@ -68,12 +67,8 @@ function neckMap(e) {
   });
   return [
     Fretboard({ tuning, from: 0, to: 12, dots, lefty: e.lefty, label: 'Your accuracy across the neck' }),
-    h(
-      'p',
-      { class: 'muted small' },
-      dots.length
-        ? 'Green is solid, gold is shaky, red needs work. The note drills ask about the red spots more often.'
-        : 'This fills in as you play the note drills: green where you are solid, red where you miss.',
-    ),
+    dots.length
+      ? h('div', { class: 'legend' }, [['ok', 'Solid'], ['seventh', 'Shaky'], ['miss', 'Needs work']].map(([role, text]) => h('span', {}, h('i', { class: `swatch role-${role}` }), text)))
+      : h('p', { class: 'muted small' }, 'Fills in as you play the note drills.'),
   ];
 }

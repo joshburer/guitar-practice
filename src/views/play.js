@@ -1,7 +1,7 @@
 import { h } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { PLAY_MODES, SESSION } from '../play/index.js';
-import { settings } from '../state/settings.js';
+import { settings, setSetting } from '../state/settings.js';
 import { playedToday } from '../state/progress.js';
 import { header, section } from './common.js';
 
@@ -15,17 +15,17 @@ export function PlayView(root, app) {
       'div',
       { class: 'mix' },
       h('p', { class: 'eyebrow' }, 'Daily session'),
-      h('h2', {}, `${total} minutes, guitar in hand`),
-      h('p', {}, `${SESSION.map((b) => `${b.mode.title} ${b.minutes}`).join(' → ')}. Prop the phone up: it counts you in, keeps time and moves on by itself.`),
+      h('h2', {}, `${total} minutes, hands-free`),
+      h('ol', { class: 'mix-steps' }, SESSION.map((b) => h('li', {}, b.mode.title, h('small', {}, `${b.minutes} min`)))),
       h(
         'div',
         { class: 'mix-foot' },
         h('button', { type: 'button', class: 'btn btn-light', onclick: app.startSession }, 'Start'),
-        h('p', { class: 'mix-count' }, minutes ? `${minutes} min played today` : 'Nothing played yet today'),
+        h('p', { class: 'mix-count' }, minutes ? `${minutes} min played today` : ''),
       ),
     ),
     section(
-      'Or pick one',
+      'Or just one',
       h(
         'div',
         { class: 'list' },
@@ -34,12 +34,8 @@ export function PlayView(root, app) {
         ),
       ),
     ),
-    h(
-      'p',
-      { class: 'muted small' },
-      settings.sound
-        ? 'Start slow enough to play every prompt cleanly, then raise the tempo five beats at a time. Tempo, the click, the microphone and each mode’s options are on the play screen.'
-        : 'Sound is off, so there is no click or answer to hear. Turn it on in settings.',
-    ),
   );
+  if (!settings.sound) {
+    root.append(h('p', { class: 'notice' }, 'Sound is off: no click, no answers.', h('button', { type: 'button', class: 'btn btn-small', onclick: () => setSetting('sound', true) }, 'Turn on')));
+  }
 }

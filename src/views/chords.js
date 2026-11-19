@@ -48,7 +48,6 @@ function Voicings(root, state, set, e) {
       shapes.length
         ? h('div', { class: 'shapes' }, shapes.map((v) => card(e, chord, v.frets, v.frets.includes(0) ? 'Open' : `Fret ${v.baseFret}`)))
         : h('p', { class: 'muted' }, 'No comfortable grip for this chord in this tuning.'),
-      h('p', { class: 'muted small' }, 'Tap a shape to hear it. Shapes run from the nut up the neck: the same chord in every position.'),
     ),
   );
 }
@@ -82,7 +81,6 @@ function Triads(root, state, set, e) {
         { class: 'shapes shapes-3' },
         [...shapes].sort((a, b) => Math.min(...a.frets.filter((f) => f >= 0)) - Math.min(...b.frets.filter((f) => f >= 0))).map((sh) => card(e, chord, sh.frets, names[sh.inversion])),
       ),
-      h('p', { class: 'muted small' }, 'Each shape holds the same three notes with a different one on the bottom. Move between neighbours and notice which note stays put.'),
     ),
   );
 }
@@ -99,7 +97,7 @@ function Identify(root, state, set, e) {
   const dots = frets.flatMap((fret, string) => (fret < 0 ? [] : [{ string, fret, ...info(string, fret) }]));
 
   let name = 'Tap the neck';
-  let detail = 'One note per string. Tap a note again to remove it.';
+  let detail = 'One note per string.';
   if (best) {
     name = best.name;
     detail = [best.type.name + (best.noFifth ? ', no 5th' : ''), found.length > 1 && `also ${found.slice(1, 4).map((c) => c.name).join(', ')}`].filter(Boolean).join(' · ');

@@ -1,4 +1,4 @@
-import { h } from '../ui/dom.js';
+import { h, buzz } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { Segmented, Select, openSheet } from '../ui/controls.js';
 import { env } from '../state/settings.js';
@@ -45,7 +45,6 @@ export function openOptions(item, onClose) {
       const e = env();
       const opts = optionsFor(item, e);
       body.append(
-        h('p', { class: 'tip' }, item.tip),
         ...item.options.map((o) =>
           h(
             'div',
@@ -58,6 +57,7 @@ export function openOptions(item, onClose) {
             o.note && h('p', { class: 'muted small' }, o.note(opts[o.id])),
           ),
         ),
+        h('p', { class: 'tip' }, h('b', {}, 'Tip'), item.tip),
       );
     },
     onClose,
@@ -70,6 +70,16 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
   let results = [];
   let lastKey = null;
   let timer = 0;
+  let streak = 0;
+  let best = 0;
+  let goOn = null; // moves on from the question on screen, once it has been answered wrong
+  // Enter or space moves on after a miss, for anyone at a keyboard.
+  const onKey = (event) => {
+    if (!goOn || !['Enter', ' '].includes(event.key) || event.target.closest?.('button, select, .sheet')) return;
+    event.preventDefault();
+    goOn();
+  };
+  document.addEventListener('keydown', onKey);
   const bag = [];
   const nextDrill = () => {
     if (!bag.length) bag.push(...shuffle(drills));
@@ -77,6 +87,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
   };
   const exit = () => {
     clearTimeout(timer);
+    document.removeEventListener('keydown', onKey);
     onExit();
   };
 
@@ -90,6 +101,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
     const started = performance.now();
     let locked = false;
     lastKey = key;
+    goOn = null;
 
     const main = h('h2', { class: 'prompt-main' });
     const sub = h('p', { class: 'prompt-sub' });
@@ -97,6 +109,8 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
     const answers = h('div', { class: 'answers' });
     const note = h('p', { class: 'feedback', role: 'status' });
     const next = h('button', { type: 'button', class: 'btn btn-primary', hidden: true, onclick: advance }, 'Next');
+    const run = h('p', { class: 'streak', hidden: streak < 3 }, `${streak} in a row`);
+    const bar = h('i', { style: { width: `${(index / length) * 100}%` } });
 
     const ui = {
       env: e,
@@ -117,32 +131,42 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
         locked = true;
         record(deck, key, correct);
         results.push({ correct, ms: performance.now() - started, label: q.label });
-        note.textContent = correct ? ['Correct', explain].filter(Boolean).join(' · ') : explain || 'Not quite';
+        streak = correct ? streak + 1 : 0;
+        best = Math.max(best, streak);
+        run.textContent = `${streak} in a row`;
+        run.hidden = streak < 3;
+        buzz(correct ? 12 : [30, 60, 30]);
+        screen.classList.add(correct ? 'is-right' : 'is-wrong');
+        bar.style.width = `${((index + 1) / length) * 100}%`;
+        note.replaceChildren(correct ? icon('check', 18) : '', correct ? explain || 'Correct' : explain || 'Not quite');
         note.classList.add(correct ? 'is-ok' : 'is-bad');
-        if (correct) timer = setTimeout(advance, explain ? 1400 : 700);
-        else next.hidden = false;
+        if (correct) timer = setTimeout(advance, explain ? 1600 : 750);
+        else {
+          next.hidden = false;
+          goOn = advance;
+        }
       },
     };
 
-    host.replaceChildren(
+    const screen = h(
+      'div',
+      { class: 'drill' },
       h(
         'div',
-        { class: 'drill' },
-        h(
-          'div',
-          { class: 'drill-top' },
-          h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'End session', onclick: exit }, icon('close')),
-          h('p', { class: 'drill-title' }, drills.length > 1 ? `${title} · ${drill.title}` : drill.title),
-          h('p', { class: 'drill-count' }, `${index + 1} / ${length}`),
-          drills.length === 1 && drill.options && h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Drill options', onclick: () => options(drill) }, icon('settings')),
-        ),
-        h('div', { class: 'progress' }, h('i', { style: { width: `${(index / length) * 100}%` } })),
-        h('div', { class: 'prompt' }, main, sub),
-        stage,
-        answers,
-        h('div', { class: 'drill-foot' }, note, next),
+        { class: 'drill-top' },
+        h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'End session', onclick: exit }, icon('close')),
+        h('p', { class: 'drill-title' }, drills.length > 1 ? `${title} · ${drill.title}` : drill.title),
+        run,
+        h('p', { class: 'drill-count' }, `${index + 1} / ${length}`),
+        drills.length === 1 && drill.options && h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Drill options', onclick: () => options(drill) }, icon('settings')),
       ),
+      h('div', { class: 'progress' }, bar),
+      h('div', { class: 'prompt' }, main, sub),
+      stage,
+      answers,
+      h('div', { class: 'drill-foot' }, note, next),
     );
+    host.replaceChildren(screen);
     drill.render(q, ui);
   }
 
@@ -158,6 +182,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
   }
 
   function summary() {
+    goOn = null;
     const right = results.filter((r) => r.correct).length;
     const seconds = results.reduce((sum, r) => sum + r.ms, 0) / results.length / 1000;
     const missed = [...new Set(results.filter((r) => !r.correct).map((r) => r.label))];
@@ -167,11 +192,10 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
         { class: 'drill summary' },
         h('p', { class: 'eyebrow' }, title),
         h('h2', { class: 'score' }, `${right}`, h('span', {}, ` / ${results.length}`)),
-        h('p', { class: 'muted' }, `${seconds.toFixed(1)} seconds per answer`),
+        h('p', { class: 'muted' }, [`${seconds.toFixed(1)}s per answer`, best >= 3 && `best run ${best}`].filter(Boolean).join(' · ')),
         missed.length
           ? h('div', { class: 'section' }, h('h3', { class: 'eyebrow' }, 'Review these'), h('ul', { class: 'missed' }, missed.map((m) => h('li', {}, m))))
-          : h('p', {}, 'A clean round. Narrow the options or raise the difficulty to keep it hard.'),
-        drills.length === 1 && h('p', { class: 'tip' }, drills[0].tip),
+          : h('p', { class: 'clean' }, icon('check', 18), 'Clean round'),
         h(
           'div',
           { class: 'summary-actions' },
@@ -184,6 +208,7 @@ export function runSession(host, { drills, title, length = 20, onExit }) {
               onclick: () => {
                 index = 0;
                 results = [];
+                streak = best = 0;
                 ask();
               },
             },

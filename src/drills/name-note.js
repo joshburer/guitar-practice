@@ -10,7 +10,7 @@ export default {
   neck: true,
   title: 'Name the note',
   blurb: 'See a spot on the neck, name it.',
-  tip: 'Use landmarks rather than counting up from the nut: the open strings, frets 5 and 7, the octave at 12, and the octave shape two strings over.',
+  tip: 'Use landmarks, not counting: the open strings, then frets 5, 7 and 12.',
   options: NECK_OPTIONS,
   pool: neckPool,
 

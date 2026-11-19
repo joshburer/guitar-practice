@@ -1,4 +1,4 @@
-import { h } from './ui/dom.js';
+import { h, replay } from './ui/dom.js';
 import { icon } from './ui/icons.js';
 import { Segmented, Select, openSheet } from './ui/controls.js';
 import { settings, setSetting, onSettings } from './state/settings.js';
@@ -30,6 +30,7 @@ document.getElementById('app').append(main, nav, session);
 
 let current = TABS[0];
 let inSession = false;
+let entered = 0;
 
 const app = {
   // Redraw the current tab in place, keeping the scroll position.
@@ -62,6 +63,9 @@ function go(id) {
     /* some viewers lock the address: tabs still work */
   }
   app.refresh();
+  replay(main, 'view-enter');
+  clearTimeout(entered);
+  entered = setTimeout(() => main.classList.remove('view-enter'), 500); // so later redraws in place do not animate
   window.scrollTo(0, 0);
 }
 
@@ -143,7 +147,6 @@ function openSettings() {
           confirming ? 'Tap again to erase all progress' : 'Reset progress',
         ),
       ),
-      h('p', { class: 'muted small' }, 'Progress is saved in this browser only.'),
     );
   });
 }

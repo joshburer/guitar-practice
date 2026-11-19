@@ -10,7 +10,7 @@ export default {
   group: 'Chords',
   title: 'Spell the chord',
   blurb: 'See a chord symbol, pick its notes.',
-  tip: 'Think in formulas, not memorised lists: major is R 3 5, minor flattens the 3rd, a dominant 7th adds a ♭7. Knowing the notes is what lets you find a chord anywhere on the neck.',
+  tip: 'Think in formulas: major is R 3 5, minor flattens the 3rd.',
   options: [CHORD_SET_OPTION],
   pool: chordPool,
 

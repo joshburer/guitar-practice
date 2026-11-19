@@ -13,7 +13,7 @@ export default {
   needsSound: true,
   title: 'Intervals by ear',
   blurb: 'Hear two notes, name the distance.',
-  tip: 'Sing the two notes back before you answer. Tie each interval to a sound you know, then to its shape on the neck: the goal is to hear a 3rd and already know where your finger goes.',
+  tip: 'Sing the two notes back before you answer.',
   options: [
     {
       id: 'set',
@@ -51,7 +51,7 @@ export default {
       pluck(first, 0, { force: true });
       pluck(second, ui.opts.play === 'together' ? 0 : 0.55, { force: true });
     };
-    ui.prompt('Which interval?', 'Tap the speaker to hear it again');
+    ui.prompt('Which interval?', 'Tap to hear it again');
     ui.stage.append(h('div', { class: 'center' }, h('button', { type: 'button', class: 'listen', 'aria-label': 'Play the interval again', onclick: play }, icon('play', 40))));
 
     const choices = Choices({
