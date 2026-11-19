@@ -4,7 +4,7 @@ A mobile-first guitar practice app for intermediate players and up. No build ste
 
 ```bash
 npm start       # preview at http://localhost:4173 (the microphone works on localhost)
-npm test        # theory, song and pitch-detection tests
+npm test        # theory, song, pitch- and chord-detection tests
 npm run build   # writes dist/, a static site for any HTTPS host
 ```
 
@@ -19,7 +19,7 @@ sites, and Claude artifacts are not allowed to ask for it. Everything else behav
 
 | Tab | What it does |
 | --- | --- |
-| **Play** | Guitar in hand, phone propped up. A click keeps time and prompts move on by themselves. *Note hunt*, *Changes*, *Songs*, *Echo*, or all four back to back as a 15-minute daily session. With the microphone on, single notes are heard and checked. |
+| **Play** | Guitar in hand, phone propped up. A click keeps time and prompts move on by themselves. *Note hunt*, *Changes*, *Songs*, *Echo*, or all four back to back as a 15-minute daily session. With the microphone on, single notes and strummed chords are heard and checked: a chord counts as on time when it rings clean within two beats of the change. |
 | **Train** | Seven drills plus *Today's mix*, an interleaved round across all of them. Drills adapt: items you miss come back more often. A heat map shows which spots on the neck you know. |
 | **Neck** | Any scale or arpeggio from any root across the whole neck, labelled by degree or note name. |
 | **Chords** | *Voicings*: every playable grip for a chord, generated for the current tuning. *Triads*: the three inversions on any string set. *Identify*: tap notes on the neck, get the chord name. |
@@ -39,9 +39,9 @@ src/
   play/            one file per play-along mode + runner.js (clock, tempo, microphone, session blocks)
   views/           one file per tab
   state/           settings, saved progress and the spaced-repetition picker
-  audio/           plucked-string synth, metronome click, microphone pitch detection
+  audio/           plucked-string synth, metronome click, microphone pitch and chord detection
   app.js           tabs, routing, settings sheet
-tests/             node:test tests for the theory core
+tests/             node:test tests for the theory core and the detectors (guitar-sim.js fakes a strummed guitar)
 ```
 
 Everything is derived from the theory core. A chord is a formula of intervals; its notes, its spelling, its
@@ -114,6 +114,7 @@ next(opts, env, memo) {      // memo persists between calls; memo.listening is t
     draw(stage, beat) {},    // called on every beat: reveal the answer on beat 2, say
     sound(beat, at) {},      // schedule audio for a beat: pluck(midi, 0, { at })
     hear(midi, beat) {},     // optional: a note the microphone heard
+    hearChord(reading, beat) {}, // optional: what chord is ringing (audio/chroma.js); return { text, ok } to show
   };
 }
 ```

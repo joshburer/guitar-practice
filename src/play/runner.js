@@ -81,6 +81,7 @@ export function runPlay(host, { blocks, title, onExit }) {
   function show(s, b) {
     // A note still ringing as a new prompt arrives counts for it: a held common tone is a fine way to land.
     if (b === 0 && shown?.s !== s && sounding != null) s.hear?.(sounding, 0);
+    if (shown?.s !== s) micNote.classList.remove('is-ok', 'is-bad');
     shown = { s, b };
     const text = value(s.title, b);
     main.textContent = text;
@@ -210,16 +211,30 @@ export function runPlay(host, { blocks, title, onExit }) {
   // A settled note from the microphone: hand it to the step on screen, which decides what it means.
   function heard(midi) {
     sounding = midi;
+    if (shown?.s.hearChord) return; // a chord step listens to chords instead
     micNote.textContent = midi == null ? 'Listening' : `Heard ${pcName(midi % 12)}`;
     if (midi == null || paused || !shown?.s.hear) return;
     shown.s.hear(midi, shown.b);
     show(shown.s, shown.b);
   }
 
+  // A chord reading from the microphone, for steps that ask for a whole chord. The step judges it and says
+  // what it heard; that line goes under the prompt, marked when the chord was clean.
+  function heardChord(reading) {
+    if (paused || !shown?.s.hearChord) return;
+    const said = shown.s.hearChord(reading, shown.b);
+    if (said) {
+      micNote.textContent = said.text;
+      micNote.classList.toggle('is-ok', Boolean(said.ok));
+      micNote.classList.toggle('is-bad', said.ok === false);
+    }
+    show(shown.s, shown.b);
+  }
+
   async function startMic() {
     try {
-      stopMic = await listen(heard);
-      micNote.textContent = 'Listening: play single notes and they are checked for you';
+      stopMic = await listen(heard, heardChord);
+      micNote.textContent = 'Listening: play and it is checked for you';
     } catch {
       stopMic = null;
       if (prefs.mic) micNote.textContent = 'No microphone here. It works when the app runs on its own site and you allow access.';
@@ -238,6 +253,7 @@ export function runPlay(host, { blocks, title, onExit }) {
     stopMic = null;
     sounding = null;
     micNote.textContent = '';
+    micNote.classList.remove('is-ok', 'is-bad');
     memo.listening = false;
     drawTransport();
   }

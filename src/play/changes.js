@@ -6,8 +6,8 @@ export default {
   id: 'play-changes',
   listens: true,
   title: 'Changes',
-  blurb: 'Loop a short progression in time. The key moves on every pass.',
-  tip: 'Change on the click even if the chord is not clean yet: keeping time matters more. Work up the ladder: roots, chord shapes, triads, then 3rds and 7ths, then every chord tone. With the mic on, the single-note steps count how often you land on a wanted note as the chord arrives.',
+  blurb: 'Switch chords in time round a short progression, in every key. With the mic on, each change is checked.',
+  tip: 'The point is the switch, not the chord: getting from one grip to the next on the click is what falls apart in real songs. Change on the click even if the chord is not clean yet; keeping time matters more. Work up the ladder: roots, chord shapes, triads, then 3rds and 7ths, then every chord tone. With the mic on, chord steps listen for the whole chord and count a change as on time when it rings clean within the first two beats; the note under the prompt says which note is missing or stray. Single-note steps count how often you land on a wanted note as the chord arrives. The backing strum goes quiet while the mic listens, so it only hears you.',
   options: [
     {
       id: 'prog',

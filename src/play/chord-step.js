@@ -2,7 +2,8 @@ import { h } from '../ui/dom.js';
 import { Fretboard } from '../ui/fretboard.js';
 import { ChordDiagram } from '../ui/chord-diagram.js';
 import { toneInfo, toneDots, chordOverScaleDots, midisOf } from '../ui/tones.js';
-import { voicings, bestVoicing, triadShapes, chordById, pc } from '../theory/index.js';
+import { voicings, bestVoicing, triadShapes, chordById, pc, pcName, noteName, spellChord } from '../theory/index.js';
+import { blend, judgeChord } from '../audio/chroma.js';
 import { strum } from '../audio/synth.js';
 
 // One chord of a play-along, shared by Changes and Songs. The options are a ladder for learning any tune:
@@ -90,16 +91,27 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
   let drawn = false;
   let landed = false;
 
+  // Chord views with the microphone on: the grip asked for (the triad itself in Triads), judged as it rings.
+  const asked = triad ? spellChord(pc(chord.root), triad) : chord;
+  let reading = null; // a running blend of what the microphone hears, started afresh for each chord
+  let streak = 0; // frames in a row that matched
+  const spelled = (p) => asked.tones.find((t) => pc(t.note) === p);
+  const onTime = Math.min(2, beats); // beats in which a change still counts as on time
+  const strayName = (p) => {
+    const inKey = key?.scale.find((t) => pc(t.note) === p);
+    return inKey ? noteName(inKey.note) : pcName(p, 'flat');
+  };
+
   return {
     beats,
     offset,
     title,
     peek,
-    detail: () => [detail, caption, single && memo.listening && memo.changes ? `${memo.landed ?? 0} of ${memo.changes} landed` : ''].filter(Boolean).join(' · '),
+    detail: () => [detail, caption, memo.listening && memo.changes ? `${memo.landed ?? 0} of ${memo.changes} ${single ? 'landed' : 'on time'}` : ''].filter(Boolean).join(' · '),
     draw(el) {
       if (drawn) return;
       drawn = true;
-      if (single && memo.listening) memo.changes = (memo.changes ?? 0) + 1;
+      if (memo.listening) memo.changes = (memo.changes ?? 0) + 1;
       let picture;
       if (single) {
         const dots =
@@ -115,8 +127,8 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
       el.replaceChildren(...[picture, below?.()].filter(Boolean));
     },
     sound(b, at) {
-      // With the microphone on, the backing would be heard as your playing: leave single-note views unaccompanied.
-      if (opts.backing !== 'on' || !frets || (single && memo.listening)) return;
+      // With the microphone on, the backing would be heard as your playing: leave it out.
+      if (opts.backing !== 'on' || !frets || memo.listening) return;
       if (b === 0 || (b + offset) % 4 === 0) strum(midisOf(tuning, frets), 0, { at, gain: 0.22 });
     },
     // Microphone: did you land on a wanted note as the chord arrived?
@@ -127,5 +139,33 @@ export function chordStep({ chord, key, beats, offset = 0, title, detail, peek, 
           memo.landed = (memo.landed ?? 0) + 1;
         }
       : undefined,
+    // Microphone, chord views: is the whole chord ringing, cleanly, by the time the click says change?
+    // Returns the line to show under the prompt: { text, ok }.
+    hearChord: single
+      ? undefined
+      : (frame, b) => {
+          if (!frame) {
+            streak = 0;
+            return landed ? null : { text: 'Listening: strum the chord' };
+          }
+          reading = blend(reading, frame, 0.35);
+          const judged = judgeChord(reading, pc(asked.root), asked.type);
+          streak = judged.clean ? streak + 1 : 0;
+          // Two readings in a row, so the last chord still ringing or one lucky frame does not count.
+          if (streak >= 2 && !landed) {
+            landed = b < onTime ? 'on time' : 'late';
+            if (landed === 'on time') memo.landed = (memo.landed ?? 0) + 1;
+          }
+          if (judged.clean) return { text: landed === 'late' ? `${asked.name}: clean, but late. Change on the click` : `${asked.name}: clean`, ok: true };
+          if (landed) return null; // got it already: a fading chord is not a mistake
+          const heard = spellChord(judged.best.root, judged.best.type).name;
+          const gone = judged.missing.map(spelled).filter(Boolean)[0];
+          const stray = judged.extra[0];
+          const hint = gone ? `no ${noteName(gone.note)}, the ${degreeName(gone.interval)}` : stray != null ? `${strayName(stray)} is not in ${asked.name}` : 'not clean yet';
+          return { text: `Heard ${heard === asked.name ? asked.name : `${heard}, not ${asked.name}`} · ${hint}`, ok: false };
+        },
   };
 }
+
+// '3' → '3rd', '♭7' → '♭7th', 'R' → 'root'
+const degreeName = (interval) => (interval.label === 'R' ? 'root' : interval.label + ({ 1: 'st', 2: 'nd', 3: 'rd' }[interval.degree] ?? 'th'));
