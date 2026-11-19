@@ -9,7 +9,7 @@ import { listen } from '../audio/listen.js';
 import { pcName } from '../theory/index.js';
 
 // Runs play-along modes hands-free: a click keeps time and the prompts move on by themselves.
-// A mode supplies steps (see README); the runner owns the clock, tempo, pause, the microphone,
+// A mode supplies steps (see docs/overview.md); the runner owns the clock, tempo, pause, the microphone,
 // moving between the blocks of a session, and keeping the screen awake.
 //   blocks: [{ mode, minutes }]   one block with no `minutes` runs until stopped
 

@@ -7,7 +7,7 @@ import { pick, record } from '../state/progress.js';
 import { unlock } from '../audio/synth.js';
 import { shuffle } from '../util.js';
 
-// A drill is a plain object (see README): the session runner does everything around the question itself:
+// A drill is a plain object (see docs/overview.md): the session runner does everything around the question itself:
 // choosing what to ask, timing, feedback, scoring and the end-of-round review.
 
 export const choicesOf = (option, e) => (typeof option.choices === 'function' ? option.choices(e) : option.choices);
